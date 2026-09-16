@@ -47,9 +47,18 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* 시작 화면 또는 로그인 화면 (원하시는 진입점에 따라 설정) */}
+        <Stack.Screen name="index" />
+        
+        {/* 로그인 관련 그룹 화면 */}
+        <Stack.Screen name="(auth)/login" />
+        
+        {/* 메인 탭 화면 그룹 */}
+        <Stack.Screen name="(tabs)" />
+        
+        {/* 기존에 있던 모달 창 */}
+        <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: true }} />
       </Stack>
     </ThemeProvider>
   );
