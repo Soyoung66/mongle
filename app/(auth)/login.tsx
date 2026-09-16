@@ -6,7 +6,7 @@ export default function LoginScreen() {
   const handleLogin = (provider: 'kakao' | 'google') => {
     // 나중에 Supabase 실제 로그인 로직이 들어갈 자리
     console.log(`${provider} 로그인 시도`);
-    router.replace('/(tabs)'); // 임시로 홈 화면으로 이동
+    router.replace('/(tabs)' as any);
   };
 
   return (
