@@ -8,7 +8,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from 'expo-router';
 
 export const unstable_settings = {
@@ -48,16 +48,15 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        {/* 시작 화면 또는 로그인 화면 (원하시는 진입점에 따라 설정) */}
+        {/* 첫 진입점 (세션 체크용 index) */}
         <Stack.Screen name="index" />
         
-        {/* 로그인 관련 그룹 화면 */}
+        {/* 로그인 화면 그룹 */}
         <Stack.Screen name="(auth)/login" />
         
         {/* 메인 탭 화면 그룹 */}
         <Stack.Screen name="(tabs)" />
         
-        {/* 기존에 있던 모달 창 */}
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: true }} />
       </Stack>
     </ThemeProvider>
