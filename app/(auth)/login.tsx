@@ -1,10 +1,11 @@
 // app/(auth)/login.tsx
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { supabase } from '../../lib/supabase';
+// expo-web-browser는 이제 안 써도 됩니다 (WebBrowser.maybeCompleteAuthSession() 줄도 삭제)
 
 // 긴 문자열이 로그에서 잘리지 않도록 나눠서 출력
 function logLongString(label: string, value: string, chunkSize = 300) {
@@ -37,10 +38,11 @@ function extractParamsFromUrl(url: string): Record<string, string> {
   return params;
 }
 // 웹 브라우저 세션 완료 처리
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
+  const [authUrl, setAuthUrl] = useState<string | null>(null);
+  const [redirectUrl, setRedirectUrl] = useState<string>('');
 
   const handleSocialLogin = async (provider: 'kakao' | 'google') => {
   try {
@@ -58,52 +60,59 @@ export default function LoginScreen() {
       options: {
         redirectTo,
         skipBrowserRedirect: true,
+        queryParams:
+          provider === 'google'
+            ? { prompt: 'select_account' }   // 구글: 매번 계정 선택 화면 강제
+            : { prompt: 'login' },           // 카카오: 매번 로그인 화면 강제
       },
     });
 
-    if (error) throw error;
+      if (error) throw error;
     if (!data?.url) throw new Error('인증 URL을 생성하지 못했습니다.');
 
-    logLongString('signInWithOAuth data.url', data.url);
+    console.log('[DEBUG] signInWithOAuth data.url:', data.url);
 
-    // 3. 브라우저로 인증창 열기 (두 번째 인자에 redirectTo 필수)
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    logLongString('openAuthSessionAsync result', JSON.stringify(result));
+    // 외부 브라우저 대신, 앱 안 WebView로 로그인 화면을 띄운다
+    setAuthUrl(data.url);
+  } catch (err) {
+    console.error('[ERROR] 소셜 로그인 실패:', err);
+    setLoading(false);
+  }
+};
 
-    if (result.type !== 'success' || !result.url) {
-      console.warn('[DEBUG] 로그인 취소 또는 실패:', result.type);
-      return;
-    }
+const handleShouldStartLoad = (request: { url: string }) => {
+  const url = request.url;
 
-    // 4. 콜백 URL에서 토큰 추출 (# 뒤든 ? 뒤든 둘 다 처리)
-    const params = extractParamsFromUrl(result.url);
+  // redirectTo로 가려고 하든, localhost로 가려고 하든, access_token이 붙어있으면 로그인 성공
+  if (url.includes('access_token=') || (redirectUrl && url.startsWith(redirectUrl))) {
+    setAuthUrl(null); // WebView 닫기 (실제 로딩 막기)
+
+    const params = extractParamsFromUrl(url);
     const access_token = params['access_token'];
     const refresh_token = params['refresh_token'];
 
     if (!access_token || !refresh_token) {
-      console.warn('[DEBUG] 토큰을 찾지 못함. params:', params);
-      return;
+      console.warn('[DEBUG] 토큰을 찾지 못함. url:', url);
+      setLoading(false);
+      return false; // 이 요청은 실제로 로딩하지 않음
     }
 
-    // 5. 세션 저장
-    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token,
+    supabase.auth.setSession({ access_token, refresh_token }).then(({ data: sessionData, error: sessionError }) => {
+      setLoading(false);
+
+      if (sessionError) {
+        console.error('[ERROR] setSession 실패:', sessionError);
+        return;
+      }
+
+      console.log('[DEBUG] 로그인 성공:', JSON.stringify(sessionData));
+      router.replace('/(tabs)' as any);
     });
-    if (sessionError) throw sessionError;
 
-    console.log('[DEBUG] setSession 완료:', JSON.stringify(sessionData));
-
-    // 6. 세션 확인
-    const { data: checkSession } = await supabase.auth.getSession();
-    console.log('[DEBUG] getSession() 결과:', JSON.stringify(checkSession));
-    // 7. 로그인 성공 → 탭(홈) 화면으로 이동
-    router.replace('/(tabs)' as any);
-  } catch (err) {
-    console.error('[ERROR] 소셜 로그인 실패:', err);
-  } finally {
-    setLoading(false);
+    return false; // 이 요청은 실제로 로딩하지 않음 (ERR_CONNECTION_REFUSED 방지)
   }
+
+  return true; // 그 외의 정상적인 페이지 이동은 허용
 };
 
   return (
@@ -130,6 +139,26 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </>
       )}
+
+      <Modal visible={!!authUrl} animationType="slide">
+        {authUrl && (
+          <WebView
+            source={{ uri: authUrl }}
+            onShouldStartLoadWithRequest={handleShouldStartLoad}   // ← onNavigationStateChange 대신 이걸로 교체
+            style={{ flex: 1, marginTop: 40 }}
+          />
+        )}
+        <TouchableOpacity
+          style={{ padding: 16, alignItems: 'center' }}
+          onPress={() => {
+            setAuthUrl(null);
+            setLoading(false);
+          }}
+        >
+          <Text>닫기</Text>
+        </TouchableOpacity>
+      </Modal>
+
     </View>
   );
 }
