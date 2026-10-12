@@ -1,27 +1,30 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { Colors } from '@/constants/theme';
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary
 } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+const theme = {
+  ...DarkTheme,
+  colors: { ...DarkTheme.colors, background: Colors.background, card: Colors.background },
+};
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('../assets/fonts/Pretendard-Medium.otf'),
+    'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -39,25 +42,22 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* 첫 진입점 (세션 체크용 index) */}
+    <ThemeProvider value={theme}>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
+        {/* 스플래시 → 온보딩 → 회원가입 → 홈 */}
         <Stack.Screen name="index" />
-        
-        {/* 로그인 화면 그룹 */}
-        <Stack.Screen name="(auth)/login" />
-        
-        {/* 메인 탭 화면 그룹 */}
-        <Stack.Screen name="(tabs)" />
-        
-        <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: true }} />
+        <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(auth)/login" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+
+        {/* 설정 → 회원 탈퇴 확인 */}
+        <Stack.Screen name="withdraw" options={{ animation: 'fade' }} />
+
+        {/* 보관함 → 보관한 몽글이 보기 → 삭제 알림 */}
+        <Stack.Screen name="archive/[date]" />
+        <Stack.Screen name="archive/delete" options={{ animation: 'fade' }} />
       </Stack>
     </ThemeProvider>
   );

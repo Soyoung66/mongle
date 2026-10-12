@@ -1,70 +1,79 @@
-import { SymbolView } from 'expo-symbols';
-import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
+import { Image } from 'expo-image';
+import { Tabs } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { Colors, Fonts } from '@/constants/theme';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
+// 피그마 홈(211:952) 하단 탭: 보관함 / 홈 / 설정
+const TAB_ITEMS = {
+  archive: { label: '보관함', icon: require('../../assets/images/figma/icon-inbox.svg'), size: { width: 24, height: 20 } },
+  index: { label: '홈', icon: require('../../assets/images/figma/icon-home.svg'), size: { width: 25, height: 25 } },
+  settings: { label: '설정', icon: require('../../assets/images/figma/icon-settings.svg'), size: { width: 25, height: 25 } },
+} as const;
+
+type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
+
+function MongleTabBar({ state, navigation }: TabBarProps) {
+  const insets = useSafeAreaInsets();
 
   return (
+    <View style={[styles.tabBar, { paddingBottom: insets.bottom + 19 }]}>
+      {state.routes.map((route, i) => {
+        const item = TAB_ITEMS[route.name as keyof typeof TAB_ITEMS];
+        if (!item) return null;
+        const focused = state.index === i;
+        const color = focused ? Colors.tabActive : Colors.tabInactive;
+
+        return (
+          <Pressable
+            key={route.key}
+            style={styles.tab}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: focused }}
+            onPress={() => {
+              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+            }}
+          >
+            <View style={styles.iconWrap}>
+              <Image source={item.icon} style={item.size} tintColor={color} contentFit="contain" />
+            </View>
+            <Text style={[styles.label, { color }]}>{item.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function TabLayout() {
+  return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <SymbolView
-                    name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-                    size={25}
-                    tintColor={Colors[colorScheme].text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-        }}
-      />
+      backBehavior="initialRoute"
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Colors.background } }}
+      tabBar={(props) => <MongleTabBar {...props} />}
+    >
+      <Tabs.Screen name="archive" />
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="settings" />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 96,
+    paddingTop: 12,
+    backgroundColor: Colors.background,
+  },
+  tab: { alignItems: 'center', width: 40 },
+  iconWrap: { height: 25, justifyContent: 'center', marginBottom: 11 },
+  label: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 19.6, textAlign: 'center' },
+});
