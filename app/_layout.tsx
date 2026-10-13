@@ -52,6 +52,13 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/login" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
 
+        {/* 홈 → 로딩 → 몽글이 탄생 → 말랑이 만지기 → 보관/놓아주기 선택 → 보관 완료 */}
+        <Stack.Screen name="mongle-loading" options={{ animation: 'fade' }} />
+        <Stack.Screen name="mongle-born" options={{ animation: 'fade' }} />
+        <Stack.Screen name="mongle-touch" options={{ animation: 'fade' }} />
+        <Stack.Screen name="mongle-keep" options={{ animation: 'fade' }} />
+        <Stack.Screen name="mongle-keep-done" options={{ animation: 'fade' }} />
+
         {/* 설정 → 회원 탈퇴 확인 */}
         <Stack.Screen name="withdraw" options={{ animation: 'fade' }} />
 
