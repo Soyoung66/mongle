@@ -16,9 +16,10 @@ export async function logout() {
 }
 
 // 회원탈퇴: Supabase에서 계정(카카오/구글 연동 정보 포함)을 삭제하고 기기에 남은 기록도 지운다.
-// supabase/migrations 의 delete_user 함수가 프로젝트에 적용되어 있어야 한다.
+// delete_my_account 함수는 백엔드(minsang/backend 브랜치 supabase/sql/004_delete_account.sql)에서 관리한다.
+// auth.users가 지워지면 profiles, mongles도 on delete cascade로 함께 삭제된다.
 export async function withdraw() {
-  const { error } = await supabase.rpc('delete_user');
+  const { error } = await supabase.rpc('delete_my_account');
   if (error) throw error;
 
   // 계정이 이미 지워졌으므로 서버 호출 없이 로컬 세션만 정리
