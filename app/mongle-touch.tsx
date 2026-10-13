@@ -6,10 +6,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useDesignFrame } from '@/components/useDesignFrame';
 import { Colors, Fonts } from '@/constants/theme';
+import { slimeUrl } from '@/lib/slime';
 
-// TODO: 프로덕션에서는 assets/html/slime.html을 앱에 내장해서 로드하도록 교체
 // fit=0.7: 컨테이너를 키운 만큼 비율을 낮춰서 보이는 슬라임 크기는 Ellipse2 그대로 유지
-const SLIME_URL = 'http://172.21.48.109:8787/slime.html?fit=0.7';
+const SLIME_URL = slimeUrl(0.7);
 
 type MongleChoice = { color: string; damping: number; mass: number };
 

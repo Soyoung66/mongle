@@ -6,9 +6,9 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useDesignFrame } from '@/components/useDesignFrame';
 import { Colors, Fonts } from '@/constants/theme';
+import { slimeUrl } from '@/lib/slime';
 
-// TODO: 프로덕션에서는 assets/html/slime.html을 앱에 내장해서 로드하도록 교체
-const SLIME_URL = 'http://172.21.48.109:8787/slime.html?fit=0.6';
+const SLIME_URL = slimeUrl(0.6);
 
 const SHOW_MS = 2000;
 
